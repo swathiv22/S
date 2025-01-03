@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    demo: "app"  # Optional annotation
+  name: podtato-main  # Deployment name
+  labels:
+    app: podtato-head  # Label for the app
+    name: podtato-main  # Label for the deployment
+spec:
+  replicas: 1  # Number of replicas of the pod
+  selector:
+    matchLabels:
+      app: podtato-head  # Label selector for matching pods
+      name: podtato-main
+  template:
+    metadata:
+      labels:
+        app: podtato-head  # Labels for the pod template
+        name: podtato-main
+    spec:
+      terminationGracePeriodSeconds: 5  # Grace period for termination
+      containers:
+      - name: server  # Container name
+        image: kaleoum/podtato-main:v0.1.0  # Docker image
+        imagePullPolicy: Always  # Pull the image always
+        ports:
+        - containerPort: 9000  # Container listens on port 9000
+        env:
+        - name: PORT  # Environment variable for port
+          value: "9000"
+        readinessProbe:
+          httpGet:
+            path: /  # Health check path
+            port: 9000  # Port to check health
+          initialDelaySeconds: 10  # Delay before starting the probe
+          periodSeconds: 3  # Period for the health check probe
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podtato-main  # Service name
+  labels:
+    app: podtato-head  # Label for the app
+    name: podtato-main  # Label for the service
+spec:
+  selector:
+    app: podtato-head  # Match pods with this label
+    name: podtato-main  # Match pods with this label
+  ports:
+  - name: http
+    port: 9000  # Port exposed by the service
+    protocol: TCP  # Protocol to use (TCP)
+    targetPort: 9000  # Port on the container to forward traffic to
+  type: NodePort  # Expose the service as NodePort
